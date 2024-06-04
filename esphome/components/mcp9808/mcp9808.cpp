@@ -32,6 +32,8 @@ void MCP9808Sensor::setup() {
     ESP_LOGE(TAG, "%s device id failed, device returned %X", this->name_.c_str(), dev_id);
     return;
   }
+  // Ensure the sensor is active on setup
+  this->shutdown(false);
 }
 void MCP9808Sensor::dump_config() {
   ESP_LOGCONFIG(TAG, "%s:", this->name_.c_str());
@@ -75,6 +77,17 @@ void MCP9808Sensor::update() {
   this->publish_state(temp);
   this->status_clear_warning();
 }
+
+void MCP9808Sensor::shutdown(bool enable) {
+  if (enable) {
+    this->write_byte_16(0x01, 0x0100); // Enable shutdown mode
+    this->is_shutdown_ = true;
+  } else {
+    this->write_byte_16(0x01, 0x0000); // Disable shutdown mode
+    this->is_shutdown_ = false;
+  }
+}
+
 float MCP9808Sensor::get_setup_priority() const { return setup_priority::DATA; }
 
 }  // namespace mcp9808
