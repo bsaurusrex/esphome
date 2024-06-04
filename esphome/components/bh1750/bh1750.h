@@ -23,10 +23,12 @@ class BH1750Sensor : public sensor::Sensor, public PollingComponent, public i2c:
   void update() override;
   float get_setup_priority() const override;
 
+  void shutdown(bool enable);  // Add shutdown method
  protected:
   void read_lx_(BH1750Mode mode, uint8_t mtreg, const std::function<void(float)> &f);
 
   uint8_t active_mtreg_{0};
+  bool is_shutdown_ = false;  // Track shutdown state
 };
 
 }  // namespace bh1750
