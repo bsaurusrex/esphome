@@ -14,6 +14,10 @@ class MCP9808Sensor : public sensor::Sensor, public PollingComponent, public i2c
   float get_setup_priority() const override;
 
   void update() override;
+  void shutdown(bool enable);
+
+ private:
+  bool is_shutdown_ = false;
 };
 
 }  // namespace mcp9808
