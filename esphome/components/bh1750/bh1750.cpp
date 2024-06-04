@@ -6,6 +6,7 @@ namespace bh1750 {
 
 static const char *const TAG = "bh1750.sensor";
 
+static const uint8_t BH1750_COMMAND_POWER_DOWN = 0b00000000;  // Power down command
 static const uint8_t BH1750_COMMAND_POWER_ON = 0b00000001;
 static const uint8_t BH1750_COMMAND_MT_REG_HI = 0b01000000;  // last 3 bits
 static const uint8_t BH1750_COMMAND_MT_REG_LO = 0b01100000;  // last 5 bits
@@ -44,9 +45,24 @@ void BH1750Sensor::setup() {
     this->mark_failed();
     return;
   }
+  this->is_shutdown_ = false;  // Ensure sensor is active on setup
+}
+
+void BH1750Sensor::shutdown(bool enable) {
+  uint8_t command = enable ? BH1750_COMMAND_POWER_DOWN : BH1750_COMMAND_POWER_ON;
+  if (this->write(&command, 1) != i2c::ERROR_OK) {
+    ESP_LOGW(TAG, "Setting shutdown mode for BH1750 failed");
+    return;
+  }
+  this->is_shutdown_ = enable;
 }
 
 void BH1750Sensor::read_lx_(BH1750Mode mode, uint8_t mtreg, const std::function<void(float)> &f) {
+  if (this->is_shutdown_) {
+    ESP_LOGW(TAG, "BH1750 is in shutdown mode, cannot read");
+    f(NAN);
+    return;
+  }
   // turn on (after one-shot sensor automatically powers down)
   uint8_t turn_on = BH1750_COMMAND_POWER_ON;
   if (this->write(&turn_on, 1) != i2c::ERROR_OK) {
